@@ -58,15 +58,19 @@ export interface ProjectStats {
   };
 }
 
-export function getProjectStats(): ProjectStats {
+export function getProjectStats(projectId?: string): ProjectStats {
   const db = getDatabase();
+  
+  const whereClause = projectId ? 'WHERE project_id = ?' : '';
+  const params = projectId ? [projectId] : [];
   
   // Get status counts
   const statusRows = db.prepare(`
     SELECT status, COUNT(*) as count 
     FROM features 
+    ${whereClause}
     GROUP BY status
-  `).all() as { status: string; count: number }[];
+  `).all(...params) as { status: string; count: number }[];
   
   const by_status = {
     planned: 0,
@@ -85,8 +89,9 @@ export function getProjectStats(): ProjectStats {
   const priorityRows = db.prepare(`
     SELECT priority, COUNT(*) as count 
     FROM features 
+    ${whereClause}
     GROUP BY priority
-  `).all() as { priority: string; count: number }[];
+  `).all(...params) as { priority: string; count: number }[];
   
   const by_priority = {
     low: 0,
@@ -106,10 +111,14 @@ export function getProjectStats(): ProjectStats {
   };
 }
 
-export function getAllFeatures(): Feature[] {
+export function getAllFeatures(projectId?: string): Feature[] {
   const db = getDatabase();
+  const whereClause = projectId ? 'WHERE project_id = ?' : '';
+  const params = projectId ? [projectId] : [];
+  
   const rows = db.prepare(`
     SELECT * FROM features 
+    ${whereClause}
     ORDER BY 
       CASE priority 
         WHEN 'critical' THEN 1 
@@ -119,7 +128,7 @@ export function getAllFeatures(): Feature[] {
         ELSE 5
       END,
       updated_at DESC
-  `).all();
+  `).all(...params);
   
   return rows.map((row: any) => ({
     ...row,
@@ -128,11 +137,14 @@ export function getAllFeatures(): Feature[] {
   }));
 }
 
-export function getFeaturesByStatus(status: string): Feature[] {
+export function getFeaturesByStatus(status: string, projectId?: string): Feature[] {
   const db = getDatabase();
+  const whereClause = projectId ? 'WHERE status = ? AND project_id = ?' : 'WHERE status = ?';
+  const params = projectId ? [status, projectId] : [status];
+  
   const rows = db.prepare(`
     SELECT * FROM features 
-    WHERE status = ?
+    ${whereClause}
     ORDER BY 
       CASE priority 
         WHEN 'critical' THEN 1 
@@ -142,7 +154,7 @@ export function getFeaturesByStatus(status: string): Feature[] {
         ELSE 5
       END,
       updated_at DESC
-  `).all(status);
+  `).all(...params);
   
   return rows.map((row: any) => ({
     ...row,
@@ -166,16 +178,117 @@ export function getRecentImplementations(limit: number = 10): Implementation[] {
   }));
 }
 
-export function getImplementationHistory() {
+export function getImplementationHistory(projectId?: string) {
   const db = getDatabase();
-  const rows = db.prepare(`
+  
+  let query = `
     SELECT 
       i.*,
-      f.name as feature_name
+      f.name as feature_name,
+      f.project_id
     FROM implementations i
     LEFT JOIN features f ON i.feature_id = f.id
-    ORDER BY i.created_at DESC
-  `).all();
+  `;
+  
+  const params: any[] = [];
+  
+  if (projectId) {
+    query += ' WHERE f.project_id = ?';
+    params.push(projectId);
+  }
+  
+  query += ' ORDER BY i.created_at DESC';
+  
+  const rows = db.prepare(query).all(...params);
   
   return rows;
+}
+
+export interface Blocker {
+  id: string;
+  feature_id: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'in-progress' | 'resolved';
+  resolution_notes: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  feature_name?: string;
+}
+
+export function getBlockers(projectId?: string, includeResolved: boolean = false): Blocker[] {
+  const db = getDatabase();
+  
+  let query = `
+    SELECT 
+      b.*,
+      f.name as feature_name
+    FROM blockers b
+    LEFT JOIN features f ON b.feature_id = f.id
+  `;
+  
+  const conditions: string[] = [];
+  const params: any[] = [];
+  
+  if (projectId) {
+    conditions.push('f.project_id = ?');
+    params.push(projectId);
+  }
+  
+  if (!includeResolved) {
+    conditions.push("b.status != 'resolved'");
+  }
+  
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+  
+  query += ` ORDER BY 
+    CASE b.severity 
+      WHEN 'critical' THEN 1 
+      WHEN 'high' THEN 2 
+      WHEN 'medium' THEN 3 
+      WHEN 'low' THEN 4 
+    END,
+    b.created_at DESC
+  `;
+  
+  const rows = db.prepare(query).all(...params);
+  return rows as Blocker[];
+}
+
+export function getFeatureWithDetails(featureId: string) {
+  const db = getDatabase();
+  
+  // Get feature
+  const feature = db.prepare('SELECT * FROM features WHERE id = ?').get(featureId) as any;
+  if (!feature) return null;
+  
+  // Parse JSON fields
+  feature.dependencies = feature.dependencies ? JSON.parse(feature.dependencies) : [];
+  feature.tags = feature.tags ? JSON.parse(feature.tags) : [];
+  
+  // Get implementations
+  const implementations = db.prepare(`
+    SELECT * FROM implementations 
+    WHERE feature_id = ? 
+    ORDER BY created_at DESC
+  `).all(featureId);
+  
+  // Get blockers
+  const blockers = db.prepare(`
+    SELECT * FROM blockers 
+    WHERE feature_id = ? AND status != 'resolved'
+    ORDER BY created_at DESC
+  `).all(featureId);
+  
+  return {
+    ...feature,
+    implementations: implementations.map((impl: any) => ({
+      ...impl,
+      files_affected: JSON.parse(impl.files_affected),
+      patterns_used: impl.patterns_used ? JSON.parse(impl.patterns_used) : [],
+    })),
+    blockers,
+  };
 }

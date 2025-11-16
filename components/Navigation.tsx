@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { LayoutDashboard, ListTodo, Clock } from 'lucide-react'
+import { LayoutDashboard, ListTodo, Clock, Network } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 export default function Navigation() {
@@ -10,6 +10,7 @@ export default function Navigation() {
   const links = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/features', label: 'Features', icon: ListTodo },
+    { href: '/dependencies', label: 'Dependencies', icon: Network },
     { href: '/timeline', label: 'Timeline', icon: Clock },
   ]
   

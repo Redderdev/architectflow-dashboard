@@ -1,11 +1,53 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { Calendar, FileCode, User, Clock } from 'lucide-react'
-import { getImplementationHistory } from '@/lib/db'
 import { format } from 'date-fns'
 
-export const dynamic = 'force-dynamic'
-
 export default function TimelinePage() {
-  const implementations = getImplementationHistory()
+  const [implementations, setImplementations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadImplementations()
+    
+    // Listen for project changes
+    const handleProjectChange = () => loadImplementations()
+    window.addEventListener('projectChanged', handleProjectChange)
+    
+    return () => window.removeEventListener('projectChanged', handleProjectChange)
+  }, [])
+
+  const loadImplementations = async () => {
+    try {
+      const projectId = localStorage.getItem('selected_project') || ''
+      const url = projectId 
+        ? `/api/implementations?project_id=${projectId}`
+        : '/api/implementations'
+      
+      const res = await fetch(url)
+      const data = await res.json()
+      setImplementations(data)
+    } catch (error) {
+      console.error('Failed to load implementations:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse space-y-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -36,7 +78,7 @@ export default function TimelinePage() {
             
             {/* Timeline Items */}
             <div className="space-y-8">
-              {implementations.map((impl, index) => (
+              {implementations.map((impl: any, index: number) => (
                 <TimelineItem 
                   key={impl.id} 
                   implementation={impl}

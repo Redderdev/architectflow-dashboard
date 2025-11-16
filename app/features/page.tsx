@@ -1,16 +1,93 @@
-import { Plus } from 'lucide-react'
-import { getAllFeatures } from '@/lib/db'
-import FeatureCard from '@/components/FeatureCard'
+'use client'
 
-export const dynamic = 'force-dynamic'
+import { useEffect, useState, useMemo } from 'react'
+import { Plus } from 'lucide-react'
+import { Feature } from '@/lib/db'
+import FeatureCard from '@/components/FeatureCard'
+import FeatureDetailsModal from '@/components/FeatureDetailsModal'
+import TagFilter from '@/components/TagFilter'
 
 export default function FeaturesPage() {
-  const features = getAllFeatures()
+  const [features, setFeatures] = useState<Feature[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+  useEffect(() => {
+    loadFeatures()
+    
+    // Listen for project changes
+    const handleProjectChange = () => loadFeatures()
+    window.addEventListener('projectChanged', handleProjectChange)
+    
+    return () => window.removeEventListener('projectChanged', handleProjectChange)
+  }, [])
+
+  const loadFeatures = async () => {
+    try {
+      const projectId = localStorage.getItem('selected_project') || ''
+      const url = projectId 
+        ? `/api/features?project_id=${projectId}`
+        : '/api/features'
+      
+      const res = await fetch(url)
+      const data = await res.json()
+      setFeatures(data)
+    } catch (error) {
+      console.error('Failed to load features:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Extract all tags from features
+  const allTags = useMemo(() => {
+    const tags: string[] = []
+    features.forEach(f => {
+      const featureTags = typeof f.tags === 'string' ? JSON.parse(f.tags || '[]') : (f.tags || [])
+      tags.push(...featureTags)
+    })
+    return tags
+  }, [features])
+
+  // Filter features by selected tags
+  const filteredFeatures = useMemo(() => {
+    if (selectedTags.length === 0) return features
+    
+    return features.filter(f => {
+      const featureTags = typeof f.tags === 'string' ? JSON.parse(f.tags || '[]') : (f.tags || [])
+      return selectedTags.some(tag => featureTags.includes(tag))
+    })
+  }, [features, selectedTags])
+
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    )
+  }
+
+  const handleClearTags = () => {
+    setSelectedTags([])
+  }
   
-  const planned = features.filter(f => f.status === 'planned')
-  const inProgress = features.filter(f => f.status === 'in-progress')
-  const completed = features.filter(f => f.status === 'completed')
-  const blocked = features.filter(f => f.status === 'blocked')
+  const planned = filteredFeatures.filter(f => f.status === 'planned')
+  const inProgress = filteredFeatures.filter(f => f.status === 'in-progress')
+  const completed = filteredFeatures.filter(f => f.status === 'completed')
+  const blocked = filteredFeatures.filter(f => f.status === 'blocked')
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-96 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -20,7 +97,10 @@ export default function FeaturesPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Feature Board</h1>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Kanban view of all features</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Kanban view of all features • {filteredFeatures.length} of {features.length} total
+                {selectedTags.length > 0 && ` • Filtered by ${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''}`}
+              </p>
             </div>
             <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Plus className="w-4 h-4" />
@@ -32,6 +112,16 @@ export default function FeaturesPage() {
 
       {/* Kanban Board */}
       <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tag Filter */}
+        <div className="mb-6">
+          <TagFilter 
+            allTags={allTags}
+            selectedTags={selectedTags}
+            onTagToggle={handleTagToggle}
+            onClearAll={handleClearTags}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Planned Column */}
           <Column 
@@ -39,6 +129,7 @@ export default function FeaturesPage() {
             count={planned.length}
             color="slate"
             features={planned}
+            onFeatureClick={setSelectedFeatureId}
           />
           
           {/* In Progress Column */}
@@ -47,6 +138,7 @@ export default function FeaturesPage() {
             count={inProgress.length}
             color="yellow"
             features={inProgress}
+            onFeatureClick={setSelectedFeatureId}
           />
           
           {/* Completed Column */}
@@ -55,6 +147,7 @@ export default function FeaturesPage() {
             count={completed.length}
             color="green"
             features={completed}
+            onFeatureClick={setSelectedFeatureId}
           />
           
           {/* Blocked Column */}
@@ -63,9 +156,16 @@ export default function FeaturesPage() {
             count={blocked.length}
             color="red"
             features={blocked}
+            onFeatureClick={setSelectedFeatureId}
           />
         </div>
       </main>
+
+      {/* Feature Details Modal */}
+      <FeatureDetailsModal 
+        featureId={selectedFeatureId}
+        onClose={() => setSelectedFeatureId(null)}
+      />
     </div>
   )
 }
@@ -74,7 +174,8 @@ interface ColumnProps {
   title: string
   count: number
   color: 'slate' | 'yellow' | 'green' | 'red'
-  features: any[]
+  features: Feature[]
+  onFeatureClick: (id: string) => void
 }
 
 const colorClasses = {
@@ -84,7 +185,7 @@ const colorClasses = {
   red: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
 }
 
-function Column({ title, count, color, features }: ColumnProps) {
+function Column({ title, count, color, features, onFeatureClick }: ColumnProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Column Header */}
@@ -103,7 +204,11 @@ function Column({ title, count, color, features }: ColumnProps) {
           </div>
         ) : (
           features.map(feature => (
-            <FeatureCard key={feature.id} feature={feature} />
+            <FeatureCard 
+              key={feature.id} 
+              feature={feature}
+              onClick={() => onFeatureClick(feature.id)}
+            />
           ))
         )}
       </div>

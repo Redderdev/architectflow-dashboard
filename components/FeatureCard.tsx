@@ -3,6 +3,7 @@ import { AlertCircle, Clock, CheckCircle2, Circle } from 'lucide-react'
 
 interface FeatureCardProps {
   feature: Feature
+  onClick?: () => void
 }
 
 const priorityColors = {
@@ -19,15 +20,23 @@ const statusIcons = {
   blocked: AlertCircle,
 }
 
-export default function FeatureCard({ feature }: FeatureCardProps) {
+export default function FeatureCard({ feature, onClick }: FeatureCardProps) {
   const StatusIcon = statusIcons[feature.status]
+  const isBlocked = feature.status === 'blocked'
   
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow cursor-pointer">
+    <div 
+      onClick={onClick}
+      className={`bg-white dark:bg-slate-800 rounded-lg border ${
+        isBlocked 
+          ? 'border-red-300 dark:border-red-700 ring-2 ring-red-100 dark:ring-red-900/30' 
+          : 'border-slate-200 dark:border-slate-700'
+      } p-4 hover:shadow-md transition-shadow cursor-pointer`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center space-x-2">
-          <StatusIcon className="w-4 h-4 text-slate-400" />
+          <StatusIcon className={`w-4 h-4 ${isBlocked ? 'text-red-500' : 'text-slate-400'}`} />
           <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
             {feature.id}
           </span>
@@ -36,6 +45,18 @@ export default function FeatureCard({ feature }: FeatureCardProps) {
           {feature.priority}
         </span>
       </div>
+      
+      {/* Blocker Alert */}
+      {isBlocked && (
+        <div className="mb-3 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+            <span className="text-xs font-semibold text-red-700 dark:text-red-300">
+              BLOCKED
+            </span>
+          </div>
+        </div>
+      )}
       
       {/* Title */}
       <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2">
