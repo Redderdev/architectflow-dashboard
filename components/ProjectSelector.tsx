@@ -32,7 +32,7 @@ export default function ProjectSelector({ onProjectChange }: ProjectSelectorProp
         if (Array.isArray(data)) {
           setProjects(data)
           if (data.length > 0) {
-            const storedProjectId = localStorage.getItem('architectflow_project_id')
+            const storedProjectId = localStorage.getItem('architectflow_project_id') || localStorage.getItem('selected_project')
             const projectId = storedProjectId && data.find((p: Project) => p.id === storedProjectId)
               ? storedProjectId
               : data[0].id
@@ -51,12 +51,11 @@ export default function ProjectSelector({ onProjectChange }: ProjectSelectorProp
   const handleProjectChange = (projectId: string) => {
     setSelectedProject(projectId)
     localStorage.setItem('architectflow_project_id', projectId)
+    localStorage.setItem('selected_project', projectId)
     setIsOpen(false)
     if (onProjectChange) onProjectChange(projectId)
     // Trigger custom event for same-window updates
     window.dispatchEvent(new Event('projectChanged'))
-    // Reload page to refresh data
-    window.location.reload()
   }
 
   const handleProjectCreated = (project: Project) => {

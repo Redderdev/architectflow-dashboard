@@ -20,7 +20,7 @@ export default function TimelinePage() {
 
   const loadImplementations = async () => {
     try {
-      const projectId = localStorage.getItem('selected_project') || ''
+      const projectId = localStorage.getItem('architectflow_project_id') || localStorage.getItem('selected_project') || ''
       const url = projectId 
         ? `/api/implementations?project_id=${projectId}`
         : '/api/implementations'

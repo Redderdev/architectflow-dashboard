@@ -25,7 +25,7 @@ export default function FeaturesPage() {
 
   const loadFeatures = async () => {
     try {
-      const projectId = localStorage.getItem('selected_project') || ''
+      const projectId = localStorage.getItem('architectflow_project_id') || localStorage.getItem('selected_project') || ''
       const url = projectId 
         ? `/api/features?project_id=${projectId}`
         : '/api/features'

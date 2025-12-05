@@ -21,7 +21,7 @@ export default function BlockersList() {
 
   const loadBlockers = async () => {
     try {
-      const projectId = localStorage.getItem('selected_project') || ''
+      const projectId = localStorage.getItem('architectflow_project_id') || localStorage.getItem('selected_project') || ''
       const url = projectId 
         ? `/api/blockers?project_id=${projectId}`
         : '/api/blockers'
