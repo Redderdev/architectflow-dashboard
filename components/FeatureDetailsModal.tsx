@@ -289,10 +289,10 @@ export default function FeatureDetailsModal({ featureId, onClose }: FeatureDetai
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                 <div className="grid grid-cols-2 gap-4 text-xs text-slate-500 dark:text-slate-400">
                   <div>
-                    <span className="font-medium">Created:</span> {new Date(feature.created_at).toLocaleString()}
+                    <span className="font-medium">Created:</span> {feature.created_at ? new Date(feature.created_at).toLocaleString() : 'N/A'}
                   </div>
                   <div>
-                    <span className="font-medium">Updated:</span> {new Date(feature.updated_at).toLocaleString()}
+                    <span className="font-medium">Updated:</span> {feature.updated_at ? new Date(feature.updated_at).toLocaleString() : 'N/A'}
                   </div>
                 </div>
               </div>

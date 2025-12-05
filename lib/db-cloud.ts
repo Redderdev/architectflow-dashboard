@@ -254,6 +254,57 @@ export async function getFeaturesByStatus(status: string, projectId?: string): P
   return result.rows.map(parseFeature);
 }
 
+/**
+ * Get feature with all details (implementations, blockers, dependencies)
+ */
+export async function getFeatureWithDetails(featureId: string): Promise<any> {
+  // Get feature
+  const feature = await queryOne<any>(
+    'SELECT * FROM features WHERE id = $1',
+    [featureId]
+  );
+  
+  if (!feature) return null;
+  
+  // Get implementations
+  const implementations = await queryAll<any>(
+    'SELECT * FROM implementations WHERE feature_id = $1 ORDER BY created_at DESC',
+    [featureId]
+  );
+  
+  // Get blockers
+  const blockers = await queryAll<any>(
+    `SELECT * FROM blockers WHERE feature_id = $1 AND resolved_at IS NULL ORDER BY created_at DESC`,
+    [featureId]
+  );
+  
+  return {
+    ...parseFeature(feature),
+    implementations: implementations.map((impl: any) => ({
+      id: impl.id,
+      feature_id: impl.feature_id,
+      created_at: impl.created_at,
+      notes: impl.description || impl.notes || null,
+      files_affected: typeof impl.file_path === 'string' && impl.file_path.length > 0
+        ? [impl.file_path]
+        : (typeof impl.files_affected === 'string' 
+          ? JSON.parse(impl.files_affected) 
+          : impl.files_affected || []),
+      patterns_used: typeof impl.patterns_used === 'string'
+        ? JSON.parse(impl.patterns_used)
+        : impl.patterns_used || [],
+    })),
+    blockers: blockers.map((blocker: any) => ({
+      id: blocker.id,
+      feature_id: blocker.feature_id,
+      description: blocker.description,
+      severity: blocker.severity,
+      status: blocker.resolved_at ? 'resolved' : 'active',
+      created_at: blocker.created_at,
+    })),
+  };
+}
+
 function parseFeature(row: any): Feature {
   return {
     id: row.id,

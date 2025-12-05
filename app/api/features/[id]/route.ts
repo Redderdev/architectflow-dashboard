@@ -2,7 +2,7 @@
  * API route for single feature details
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getFeatureWithDetails } from '@/lib/db'
+import { getFeatureWithDetails } from '@/lib/db-cloud'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const feature = getFeatureWithDetails(id)
+    const feature = await getFeatureWithDetails(id)
     
     if (!feature) {
       return NextResponse.json(
