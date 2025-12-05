@@ -2,7 +2,7 @@
  * API route for blockers with project filtering
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getBlockers } from '@/lib/db'
+import { getBlockers } from '@/lib/db-cloud'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('project_id')
     const includeResolved = searchParams.get('includeResolved') === 'true'
     
-    const blockers = getBlockers(
+    const blockers = await getBlockers(
       projectId || undefined,
       includeResolved
     )

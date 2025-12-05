@@ -9,35 +9,16 @@ import {
   createProject,
   Project 
 } from '@/lib/db-cloud'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
-
-// For SaaS, we need to get userId from Auth0 token or session
-// For now, use a placeholder or environment variable
-function getUserId(request: NextRequest): string {
-  // TODO: Extract from Auth0 JWT token in Authorization header
-  // For development/testing, use env var or default
-  const authHeader = request.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    // In production, decode JWT and extract sub claim
-    // For now, use a simple approach
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      return payload.sub || 'demo-user';
-    } catch {
-      return process.env.DEFAULT_USER_ID || 'demo-user';
-    }
-  }
-  return process.env.DEFAULT_USER_ID || 'demo-user';
-}
 
 /**
  * GET /api/projects - List all projects for user
  */
 export async function GET(request: NextRequest) {
   try {
-    const userId = getUserId(request);
+    const userId = getUserIdFromRequest(request);
     const projects = await listProjects(userId);
     
     return NextResponse.json(projects);
@@ -55,7 +36,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const userId = getUserId(request);
+    const userId = getUserIdFromRequest(request);
     const body = await request.json();
     
     // Validate required fields

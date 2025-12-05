@@ -2,7 +2,7 @@
  * API route for project stats
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getProjectStats } from '@/lib/db'
+import { getProjectStats } from '@/lib/db-cloud'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const projectId = searchParams.get('project_id')
     
-    const stats = getProjectStats(projectId || undefined)
+    const stats = await getProjectStats(projectId || undefined)
     
     return NextResponse.json(stats)
   } catch (error) {

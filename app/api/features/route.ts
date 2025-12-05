@@ -2,7 +2,7 @@
  * API route for features with project filtering
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllFeatures, getFeaturesByStatus } from '@/lib/db'
+import { getAllFeatures, getFeaturesByStatus } from '@/lib/db-cloud'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
     
     let features
     if (status) {
-      features = getFeaturesByStatus(status, projectId || undefined)
+      features = await getFeaturesByStatus(status, projectId || undefined)
     } else {
-      features = getAllFeatures(projectId || undefined)
+      features = await getAllFeatures(projectId || undefined)
     }
     
     return NextResponse.json(features)

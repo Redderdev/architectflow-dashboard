@@ -2,7 +2,7 @@
  * API route for implementation history with project filtering
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getImplementationHistory } from '@/lib/db'
+import { getImplementationHistory } from '@/lib/db-cloud'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const projectId = searchParams.get('project_id')
     
-    const history = getImplementationHistory(projectId || undefined)
+    const history = await getImplementationHistory(projectId || undefined)
     
     return NextResponse.json(history)
   } catch (error) {
