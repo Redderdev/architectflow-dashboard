@@ -2,9 +2,12 @@
  * API route for features with project filtering
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllFeatures, getFeaturesByStatus } from '@/lib/db-cloud'
+import { getAllFeatures as getAllFeaturesCloud, getFeaturesByStatus as getFeaturesByStatusCloud } from '@/lib/db-cloud'
+import { getAllFeatures as getAllFeaturesLocal, getFeaturesByStatus as getFeaturesByStatusLocal } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
+
+const hasCloudDb = !!process.env.DATABASE_URL
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +17,13 @@ export async function GET(request: NextRequest) {
     
     let features
     if (status) {
-      features = await getFeaturesByStatus(status, projectId || undefined)
+      features = hasCloudDb
+        ? await getFeaturesByStatusCloud(status, projectId || undefined)
+        : getFeaturesByStatusLocal(status, projectId || undefined)
     } else {
-      features = await getAllFeatures(projectId || undefined)
+      features = hasCloudDb
+        ? await getAllFeaturesCloud(projectId || undefined)
+        : getAllFeaturesLocal(projectId || undefined)
     }
     
     return NextResponse.json(features)

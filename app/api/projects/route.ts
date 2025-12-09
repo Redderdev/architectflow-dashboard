@@ -13,11 +13,17 @@ import { getUserIdFromRequest } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
 
+const hasCloudDb = !!process.env.DATABASE_URL
+
 /**
  * GET /api/projects - List all projects for user
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!hasCloudDb) {
+      return NextResponse.json([])
+    }
+
     const userId = getUserIdFromRequest(request);
     const projects = await listProjects(userId);
     
@@ -36,6 +42,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!hasCloudDb) {
+      return NextResponse.json(
+        { error: 'Cloud database not configured (DATABASE_URL missing)' },
+        { status: 503 }
+      )
+    }
+
     const userId = getUserIdFromRequest(request);
     const body = await request.json();
     

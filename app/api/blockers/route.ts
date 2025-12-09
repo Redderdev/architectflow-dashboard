@@ -2,9 +2,12 @@
  * API route for blockers with project filtering
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getBlockers } from '@/lib/db-cloud'
+import { getBlockers as getBlockersCloud } from '@/lib/db-cloud'
+import { getBlockers as getBlockersLocal } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
+
+const hasCloudDb = !!process.env.DATABASE_URL
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,10 +15,9 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('project_id')
     const includeResolved = searchParams.get('includeResolved') === 'true'
     
-    const blockers = await getBlockers(
-      projectId || undefined,
-      includeResolved
-    )
+    const blockers = hasCloudDb
+      ? await getBlockersCloud(projectId || undefined, includeResolved)
+      : getBlockersLocal(projectId || undefined, includeResolved)
     
     return NextResponse.json(blockers)
   } catch (error) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { Plus } from 'lucide-react'
+import AppShell from '@/components/AppShell'
 import { Feature } from '@/lib/db'
 import FeatureCard from '@/components/FeatureCard'
 import FeatureDetailsModal from '@/components/FeatureDetailsModal'
@@ -75,23 +76,16 @@ export default function FeaturesPage() {
   const completed = filteredFeatures.filter(f => f.status === 'completed')
   const blocked = filteredFeatures.filter(f => f.status === 'blocked')
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-96 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+  const content = loading ? (
+    <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="animate-pulse grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-96 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+        ))}
       </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Page Header */}
+    </div>
+  ) : (
+    <>
       <div className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -110,9 +104,7 @@ export default function FeaturesPage() {
         </div>
       </div>
 
-      {/* Kanban Board */}
       <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tag Filter */}
         <div className="mb-6">
           <TagFilter 
             allTags={allTags}
@@ -123,7 +115,6 @@ export default function FeaturesPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Planned Column */}
           <Column 
             title="Planned" 
             count={planned.length}
@@ -131,8 +122,6 @@ export default function FeaturesPage() {
             features={planned}
             onFeatureClick={setSelectedFeatureId}
           />
-          
-          {/* In Progress Column */}
           <Column 
             title="In Progress" 
             count={inProgress.length}
@@ -140,8 +129,6 @@ export default function FeaturesPage() {
             features={inProgress}
             onFeatureClick={setSelectedFeatureId}
           />
-          
-          {/* Completed Column */}
           <Column 
             title="Completed" 
             count={completed.length}
@@ -149,8 +136,6 @@ export default function FeaturesPage() {
             features={completed}
             onFeatureClick={setSelectedFeatureId}
           />
-          
-          {/* Blocked Column */}
           <Column 
             title="Blocked" 
             count={blocked.length}
@@ -161,13 +146,14 @@ export default function FeaturesPage() {
         </div>
       </main>
 
-      {/* Feature Details Modal */}
       <FeatureDetailsModal 
         featureId={selectedFeatureId}
         onClose={() => setSelectedFeatureId(null)}
       />
-    </div>
+    </>
   )
+
+  return <AppShell active="features">{content}</AppShell>
 }
 
 interface ColumnProps {

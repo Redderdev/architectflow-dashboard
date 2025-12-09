@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Calendar, FileCode, User, Clock } from 'lucide-react'
+import AppShell from '@/components/AppShell'
 import { format } from 'date-fns'
 
 export default function TimelinePage() {
@@ -35,23 +36,16 @@ export default function TimelinePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-8">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+  const content = loading ? (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="animate-pulse space-y-8">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+        ))}
       </div>
-    )
-  }
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Page Header */}
+    </div>
+  ) : (
+    <>
       <div className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div>
@@ -63,7 +57,6 @@ export default function TimelinePage() {
         </div>
       </div>
 
-      {/* Timeline */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {implementations.length === 0 ? (
           <div className="text-center py-16">
@@ -73,10 +66,7 @@ export default function TimelinePage() {
           </div>
         ) : (
           <div className="relative">
-            {/* Timeline Line */}
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700"></div>
-            
-            {/* Timeline Items */}
             <div className="space-y-8">
               {implementations.map((impl: any, index: number) => (
                 <TimelineItem 
@@ -89,8 +79,10 @@ export default function TimelinePage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   )
+
+  return <AppShell active="timeline">{content}</AppShell>
 }
 
 interface TimelineItemProps {
