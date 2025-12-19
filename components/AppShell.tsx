@@ -1,14 +1,15 @@
+'use client'
+
 import Link from 'next/link'
-import { LayoutDashboard, ListTodo, GitBranch, Clock, BarChart3, Search } from 'lucide-react'
+import { LayoutDashboard, ListTodo, GitBranch, Clock, BarChart3, Search, Key } from 'lucide-react'
 import ProjectSelector from '@/components/ProjectSelector'
-import React from 'react'
 
 interface AppShellProps {
-  children: React.ReactNode
-  active: 'dashboard' | 'features' | 'dependencies' | 'timeline' | 'analytics'
+  children: any
+  active: 'dashboard' | 'features' | 'dependencies' | 'timeline' | 'analytics' | 'api-keys'
 }
 
-export default function AppShell({ children, active }: AppShellProps) {
+const AppShell = ({ children, active }: AppShellProps) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
       {/* Sidebar */}
@@ -29,6 +30,10 @@ export default function AppShell({ children, active }: AppShellProps) {
           <SidebarLink href="/dependencies" label="Dependencies" icon={<GitBranch className="w-4 h-4" />} active={active === 'dependencies'} />
           <SidebarLink href="/timeline" label="Timeline" icon={<Clock className="w-4 h-4" />} active={active === 'timeline'} />
           <SidebarLink href="/analytics" label="Analytics" icon={<BarChart3 className="w-4 h-4" />} disabled active={active === 'analytics'} />
+          
+          <div className="border-t border-slate-200 dark:border-slate-800 my-4" />
+          
+          <SidebarLink href="/dashboard/api-keys" label="API Keys" icon={<Key className="w-4 h-4" />} active={active === 'api-keys'} />
         </nav>
 
         <div className="mt-auto space-y-3 text-xs text-slate-500 dark:text-slate-500">
@@ -63,6 +68,8 @@ export default function AppShell({ children, active }: AppShellProps) {
     </div>
   )
 }
+
+export default AppShell
 
 function SidebarLink({ href, label, icon, active = false, disabled = false }: { href: string; label: string; icon: React.ReactNode; active?: boolean; disabled?: boolean }) {
   return (
